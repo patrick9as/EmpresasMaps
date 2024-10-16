@@ -7,6 +7,7 @@ async function BuscarPadarias(baseURL) {
     const page = await browser.newPage();
     
     await page.goto(baseURL, { waitUntil: 'networkidle2' });
+    console.log('Navegou para: ' + baseURL);
     await page.waitForSelector('.uQ4NLd.b9tNq.wzN8Ac.rllt__link.a-no-hover-decoration', { visible: true });
 
     // Captura todos os elementos com a classe especificada
@@ -51,8 +52,8 @@ async function BuscarDetalhesDaPadaria(page, padariaElement) {
         const detalhes = await page.$$eval('.LrzXr', elements => 
             elements.map(el => el.innerText) // Coleta todos os detalhes
         );
-        // console.log(nomePadaria);
-        // console.log(detalhes);
+        console.log(nomePadaria);
+        console.log(detalhes);
 
         // Espera o modal fechar, se necessário
         await page.evaluate(() => {
