@@ -63,7 +63,8 @@ async function BuscarDetalhesDaPadaria(href) {
 
 controllerMaps.get('/maps', async (req, res) => {
     try {
-        const padarias = await BuscarPadarias('https://www.google.com.br/maps/search/padarias+em+taubat%C3%A9/@-23.1149555,-45.9003591,10.75z?entry=ttu&g_ep=EgoyMDI0MTAxMy4wIKXMDSoASAFQAw%3D%3D');
+        const padarias = await BuscarPadarias(req.body.urlBase);
+        //https://www.google.com.br/maps/search/padarias+em+taubat%C3%A9/@-23.1149555,-45.9003591,10.75z?entry=ttu&g_ep=EgoyMDI0MTAxMy4wIKXMDSoASAFQAw%3D%3D
         
         // Navega até cada padaria e coleta informações adicionais
         const padariasComDetalhes = await Promise.all(padarias.map(async (padaria) => {
