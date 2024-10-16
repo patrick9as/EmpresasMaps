@@ -1,5 +1,4 @@
 const puppeteer = require('puppeteer');
-const fs = require('fs'); // Importando o módulo fs
 const { Router } = require('express');
 const controllerMaps = Router();
 
@@ -7,70 +6,83 @@ async function BuscarPadarias(baseURL) {
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
     
-    // Navega até a página desejada
     await page.goto(baseURL, { waitUntil: 'networkidle2' });
+    await page.waitForSelector('.uQ4NLd.b9tNq.wzN8Ac.rllt__link.a-no-hover-decoration', { visible: true });
 
-    // Aguarda até que o seletor '.hfpxzc' apareça
-    await page.waitForSelector('.hfpxzc', { visible: true });
-
-    // Captura o HTML completo da página
-    const pageContent = await page.content();
-
-    // Salva o HTML em um arquivo de texto
-    fs.writeFileSync('pageContent.txt', pageContent);
-
-    // Lê o arquivo para buscar os elementos
-    const fileContent = fs.readFileSync('pageContent.txt', 'utf8');
+    // Captura todos os elementos com a classe especificada
+    const padarias = await page.$$('.uQ4NLd.b9tNq.wzN8Ac.rllt__link.a-no-hover-decoration');
     
-    // Usa expressão regular para encontrar todos os elementos da classe 'hfpxzc'
-    const regex = /<a class="hfpxzc" aria-label="([^"]+)" href="([^"]+)"/g; // Captura aria-label e href
-    let match;
-    const elements = [];
-
-    while ((match = regex.exec(fileContent)) !== null) {
-        const ariaLabel = match[1]; // Captura o aria-label
-        const href = match[2]; // Captura o href
-
-        // Adiciona um objeto com aria-label e href ao array
-        elements.push({ ariaLabel, href });
-    }
-
-    await browser.close();
-
-    // Retorna os elementos encontrados
-    return elements;
+    return { padarias, browser, page }; // Retorna os elementos das padarias e a instância da página
 }
 
-async function BuscarDetalhesDaPadaria(href) {
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function BuscarDetalhesDaPadaria(page, padariaElement) {
+    // Rola até o elemento
+    await page.evaluate(el => el.scrollIntoView(), padariaElement);
     
-    // Navega até o href da padaria
-    await page.goto(href, { waitUntil: 'networkidle2' });
+    // Aguarda um pouco para garantir que o elemento esteja pronto para interação
+    await sleep(2000); // Aumente o tempo se necessário
 
-    // Aguarda até que a classe desejada apareça
-    await page.waitForSelector('.Io6YTe.fontBodyMedium.kR99db.fdkmkc', { visible: true });
+    // Verifica se o elemento está visível e clicável
+    const isVisible = await padariaElement.evaluate(el => {
+        const style = window.getComputedStyle(el);
+        return style.display !== 'none' && style.visibility !== 'hidden' && !el.disabled;
+    });
 
-    // Coleta todos os textos da classe especificada
-    const textos = await page.$$eval('.Io6YTe.fontBodyMedium.kR99db.fdkmkc', elements => 
-        elements.map(el => el.innerText) // Retorna um array de textos
-    );
+    if (isVisible) {
+        // Usar JavaScript para clicar no elemento
+        await page.evaluate(el => el.click(), padariaElement);
+        
+        // Aguarda o modal aparecer
+        await page.waitForSelector('.xpdopen', { visible: true });
 
-    await browser.close();
+        // Aguarda um pouco para garantir que o conteúdo do modal tenha carregado
+        await sleep(1000);
 
-    return textos; // Retorna os textos coletados
+        // Coleta o nome da padaria
+        const nomePadaria = await page.$eval('h2.qrShPb.pXs6bb.PZPZlf.q8U8x.aTI8gc.PPT5v', el => el.innerText);
+        // Coleta o telefone da classe especificada dentro do modal
+        const telefone = await page.$$eval('.LrzXr.zdqRlf.kno-fv', elements => 
+            elements.map(el => el.innerText) // Coleta todos os detalhes
+        );
+        const detalhes = await page.$$eval('.LrzXr', elements => 
+            elements.map(el => el.innerText) // Coleta todos os detalhes
+        );
+        // console.log(nomePadaria);
+        // console.log(detalhes);
+
+        // Espera o modal fechar, se necessário
+        await page.evaluate(() => {
+            const modal = document.querySelector('.xpdopen');
+            if (modal) {
+                modal.parentElement.removeChild(modal); // Remove o modal
+            }
+        });
+
+        return { nome: nomePadaria, detalhes: detalhes }; // Retorna o nome e os detalhes coletados
+    } else {
+        console.log('Elemento não está visível ou não é clicável');
+        return null; // Retorna null ou um valor padrão se o elemento não estiver visível
+    }
 }
 
 controllerMaps.get('/maps', async (req, res) => {
     try {
-        const padarias = await BuscarPadarias(req.body.urlBase);
-        //https://www.google.com.br/maps/search/padarias+em+taubat%C3%A9/@-23.1149555,-45.9003591,10.75z?entry=ttu&g_ep=EgoyMDI0MTAxMy4wIKXMDSoASAFQAw%3D%3D
+        const { padarias, browser, page } = await BuscarPadarias(req.body.urlBase);
         
-        // Navega até cada padaria e coleta informações adicionais
-        const padariasComDetalhes = await Promise.all(padarias.map(async (padaria) => {
-            const detalhes = await BuscarDetalhesDaPadaria(padaria.href);
-            return { ...padaria, detalhes }; // Combina os dados da padaria com os detalhes coletados
-        }));
+        const padariasComDetalhes = [];
+        
+        for (const padariaElement of padarias) {
+            const detalhes = await BuscarDetalhesDaPadaria(page, padariaElement);
+            if (detalhes) {
+                padariasComDetalhes.push(detalhes); // Adiciona o objeto que contém o nome e detalhes
+            }
+        }
+
+        await browser.close(); // Fecha o navegador após coletar todos os dados
 
         return res.status(200).json({ padarias: padariasComDetalhes });
     } catch (error) {
@@ -78,5 +90,6 @@ controllerMaps.get('/maps', async (req, res) => {
         res.status(500).send('Erro ao buscar a página');
     }
 });
+
 
 module.exports = controllerMaps;
