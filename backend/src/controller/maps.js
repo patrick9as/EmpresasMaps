@@ -70,7 +70,7 @@ async function BuscarDetalhesDaEmpresa(page, empresaElement) {
     }
 }
 
-controllerMaps.get('/maps', async (req, res) => {
+controllerMaps.post('/maps', async (req, res) => {
     try {
         const { empresas, browser, page } = await BuscarEmpresas(req.body.urlBase);
         
