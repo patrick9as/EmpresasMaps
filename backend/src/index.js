@@ -9,6 +9,6 @@ app.use(cors());
 app.use(bodyParser.json())
 
 app.use(routes);
-app.listen(8080, ()=>{
+app.listen(8080, '0.0.0.0', ()=>{
     console.log(`Servidor rodando na porta: ${8080}`);
 });
