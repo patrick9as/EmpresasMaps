@@ -51,7 +51,7 @@ function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-controllerMercadoLivre.get("/mercadolivre", async (req, res) => {
+controllerMercadoLivre.post("/mercadolivre", async (req, res) => {
     try {
         const { produto, valor } = await BuscarProduto(req.body.urlBase);
 
