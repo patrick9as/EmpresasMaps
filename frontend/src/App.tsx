@@ -1,5 +1,4 @@
 import { useState } from "react";
-import "./App.css";
 import axios from "axios";
 
 const api = axios.create({
@@ -20,18 +19,20 @@ const shareOptions = {
     Email: "mailto:?body=",
 };
 
-const inputStyle = {
-    fontSize: "20px",
-};
-
 function App() {
     const [formData, setFormData] = useState({
         linkML: "",
         textoWhatsapp: "",
         botaoWhatsappVisible: false,
+        loading: false,
     });
 
     const handleSubmit = async () => {
+        setFormData({
+            ...formData,
+            loading: true,
+        });
+
         const response = await api.post("/mercadolivre", {
             urlBase: formData.linkML,
         });
@@ -41,6 +42,7 @@ function App() {
             ...formData,
             textoWhatsapp: texto,
             botaoWhatsappVisible: true,
+            loading: false,
         });
     };
 
@@ -53,27 +55,43 @@ function App() {
                 fontSize: "20px",
             }}
         >
-            <input
-                style={inputStyle}
-                placeholder="Link do mercado livre"
-                value={formData.linkML}
-                onChange={(e) => {
-                    setFormData({
-                        ...formData,
-                        linkML: e.target.value,
-                    });
-                }}
-            ></input>
-
+            {!formData.botaoWhatsappVisible && (
+                <input
+                    placeholder="Link do mercado livre"
+                    value={formData.linkML}
+                    onChange={(e) => {
+                        setFormData({
+                            ...formData,
+                            linkML: e.target.value,
+                        });
+                    }}
+                ></input>
+            )}
             {!formData.botaoWhatsappVisible && (
                 <button type="button" onClick={handleSubmit}>
                     Carregar mensagem
                 </button>
             )}
 
+            {formData.loading && (
+                <img src="https://c.tenor.com/jgDVuidR3bkAAAAd/tenor.gif"></img>
+            )}
+
             {formData.botaoWhatsappVisible && (
                 <a href={`${shareOptions.WhatsApp}${formData.textoWhatsapp}`}>
-                    Compartilhar no Zap
+                    <div
+                        style={{
+                            display: "flex",
+                            flexDirection: "row",
+                            gap: "8px",
+                        }}
+                    >
+                        <p>Compartilhar no</p>
+                        <img
+                            src="https://static.whatsapp.net/rsrc.php/yZ/r/JvsnINJ2CZv.svg"
+                            alt=""
+                        ></img>
+                    </div>
                 </a>
             )}
         </div>

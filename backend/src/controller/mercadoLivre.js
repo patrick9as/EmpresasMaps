@@ -20,7 +20,7 @@ async function BuscarProduto(baseURL) {
         // Captura o texto do elemento com a classe especificada
         const produto = await page.evaluate(() => {
             const elemento = document.querySelector(".poly-component__title");
-            return elemento ? elemento.innerHTML.trim() : null; // Retorna o conteúdo ou null se não existir
+            return '%0A' + elemento ? elemento.innerHTML.trim() : null; // Retorna o conteúdo ou null se não existir
         });
 
         const valor = await page.evaluate(() => {
@@ -34,7 +34,7 @@ async function BuscarProduto(baseURL) {
             );
             valorDecimal = valorDecimal ? valorDecimal.innerHTML.trim() : null; // Retorna o conteúdo ou null se não existir
 
-            return "R$ " + valorInteiro + "," + valorDecimal;
+            return '%0AR$ ' + valorInteiro + "," + valorDecimal;
         });
 
         // console.log('Produto encontrado:', produto, valor);
@@ -56,8 +56,8 @@ controllerMercadoLivre.post("/mercadolivre", async (req, res) => {
         const { produto, valor } = await BuscarProduto(req.body.urlBase);
 
         return res.status(200).json({mensagem: 
-`Confira este produto
-${produto} por apenas ${valor}`});
+            `${produto}`
+        });
     } catch (error) {
         console.error("Erro ao buscar a página:", error);
         res.status(500).send("Erro ao buscar a página");
