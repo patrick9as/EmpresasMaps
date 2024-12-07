@@ -39,7 +39,7 @@ async function BuscarProduto(baseURL) {
 
         // console.log('Produto encontrado:', produto, valor);
         await browser.close();
-        return { produto, valor };
+        return { mensagem: produto + valor };
     } catch (error) {
         console.error("Erro:", error.message);
         await browser.close();
@@ -53,10 +53,9 @@ function sleep(ms) {
 
 controllerMercadoLivre.post("/mercadolivre", async (req, res) => {
     try {
-        const { produto, valor } = await BuscarProduto(req.body.urlBase);
+        const { mensagem} = await BuscarProduto(req.body.urlBase);
 
-        return res.status(200).json({mensagem: 
-            `${produto}`
+        return res.status(200).json({mensagem: `${mensagem}`
         });
     } catch (error) {
         console.error("Erro ao buscar a página:", error);
