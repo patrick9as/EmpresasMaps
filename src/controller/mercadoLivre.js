@@ -3,7 +3,11 @@ const { Router } = require("express");
 const controllerMercadoLivre = Router();
 
 async function BuscarProduto(baseURL) {
-    const browser = await puppeteer.launch({ headless: true });
+    // const browser = await puppeteer.launch({ headless: true });
+    const browser = await puppeteer.launch({
+        executablePath: '/usr/bin/google-chrome-stable', // Caso queira usar uma instalação do Chrome
+        headless: true,
+      });
     const page = await browser.newPage();
 
     try {
