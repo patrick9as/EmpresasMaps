@@ -2,6 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 
 const api = axios.create({
+    // baseURL: "http://localhost:8080",
     baseURL: "http://ec2-15-228-39-219.sa-east-1.compute.amazonaws.com:8080",
 });
 
@@ -21,28 +22,52 @@ const shareOptions = {
 
 function App() {
     const [formData, setFormData] = useState({
-        linkML: "",
+        linkProduto: "",
         textoWhatsapp: "",
         botaoWhatsappVisible: false,
         loading: false,
+        falhaCapturarDados: false,
     });
 
     const handleSubmit = async () => {
         setFormData({
             ...formData,
             loading: true,
+            falhaCapturarDados: false,
         });
 
-        const response = await api.post("/mercadolivre", {
-            urlBase: formData.linkML,
-        });
+        let response = undefined;
 
-        const texto = `${response.data.mensagem}%0A${formData.linkML}`;
+        if (
+            formData.linkProduto.includes("amazon") ||
+            formData.linkProduto.includes("amzn.to")
+        )
+            response = await api.post("/amazon", {
+                urlBase: formData.linkProduto,
+            });
+
+        if (formData.linkProduto.includes("mercadolivre"))
+            response = await api.post("/mercadolivre", {
+                urlBase: formData.linkProduto,
+            });
+
+        console.log("response");
+        if (!response) {
+            setFormData({
+                ...formData,
+                loading: false,
+                botaoWhatsappVisible: false,
+                falhaCapturarDados: true,
+            });
+            return;
+        }
+        const texto = `${response.data.mensagem}%0A${formData.linkProduto}`;
         setFormData({
             ...formData,
             textoWhatsapp: texto,
             botaoWhatsappVisible: true,
             loading: false,
+            falhaCapturarDados: false,
         });
     };
 
@@ -53,24 +78,54 @@ function App() {
                 flexDirection: "column",
                 gap: "8px",
                 fontSize: "20px",
+                padding: "30px",
             }}
         >
-            {!formData.botaoWhatsappVisible && (
-                <input
-                    placeholder="Link do mercado livre"
-                    value={formData.linkML}
-                    onChange={(e) => {
-                        setFormData({
-                            ...formData,
-                            linkML: e.target.value,
-                        });
+            <div
+                style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: "12px",
+                }}
+            >
+                <h2>Espião de marketplace</h2>
+                <img
+                    src="https://static-00.iconduck.com/assets.00/spy-icon-2048x1979-xmmsyi34.png"
+                    style={{
+                        maxWidth: "50px",
+                        background: "white",
+                        borderRadius: "50%",
+                        padding: "12px",
                     }}
-                ></input>
-            )}
-            {!formData.botaoWhatsappVisible && (
-                <button type="button" onClick={handleSubmit}>
-                    Carregar mensagem
-                </button>
+                />
+            </div>
+
+            <div
+            style={{display: "flex", flexDirection: "column", gap: "18px"}}
+            >
+                {!formData.botaoWhatsappVisible && (
+                    <input
+                        placeholder="Link do produto"
+                        value={formData.linkProduto}
+                        onChange={(e) => {
+                            setFormData({
+                                ...formData,
+                                linkProduto: e.target.value,
+                            });
+                        }}
+                    ></input>
+                )}
+
+                {!formData.botaoWhatsappVisible && (
+                    <button type="button" onClick={handleSubmit}>
+                        Carregar mensagem
+                    </button>
+                )}
+            </div>
+
+            {formData.falhaCapturarDados && (
+                <span style={{ color: "red" }}>Falha ao capturar dados!</span>
             )}
 
             {formData.loading && (
@@ -86,7 +141,7 @@ function App() {
                             gap: "8px",
                         }}
                     >
-                        <p>Compartilhar no</p>
+                        <p>Enviar por </p>
                         <img
                             src="https://static.whatsapp.net/rsrc.php/yZ/r/JvsnINJ2CZv.svg"
                             alt=""
