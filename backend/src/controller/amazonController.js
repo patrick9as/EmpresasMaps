@@ -9,18 +9,30 @@ mercadolivreController.post("/amazon", async (req, res) => {
         let mensagem = '';
 
         //Nome do produto
-        mensagem += await browserService.findInnerHTML(
-            "#productTitle"
+        mensagem += await browserService.findElement(true, 
+            ["#productTitle"]
         );
+        //Nome do produto
 
-        mensagem += '%0A';
+        //Preço anterior
+        try {
+            mensagem += '%0A';
+            mensagem += '~';
+            mensagem += await browserService.findElement(false, [
+                '.a-size-small.aok-offscreen',
+            ]);
+            mensagem += '~';
+        } catch (error) {
+            
+        }
+        //Preço anterior
 
         //Preço atual
+        mensagem += '%0A';
         mensagem += '*';
         mensagem += 'R$ ' + await browserService.findElement(false, [
             ".a-price-whole",
         ]);
-        
         
         try {
             mensagem += await browserService.findElement(false, [
@@ -30,7 +42,8 @@ mercadolivreController.post("/amazon", async (req, res) => {
             
         }
         mensagem += '*';
-        
+        //Preço atual
+
         await browserService.close();
 
         res.status(200).json({ mensagem: mensagem });
