@@ -3,7 +3,8 @@ import axios from "axios";
 
 const api = axios.create({
     // baseURL: "http://localhost:8080",
-    baseURL: "http://ec2-15-228-39-219.sa-east-1.compute.amazonaws.com:8080",
+    // baseURL: "http://ec2-15-228-39-219.sa-east-1.compute.amazonaws.com:8080",
+    baseURL: "http://servidor.gsoft.com.br:5002"
 });
 
 const shareOptions = {
